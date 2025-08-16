@@ -115,8 +115,8 @@ class _NotesScreenState extends State<NotesScreen> {
                       // .withValues(alpha: 0.1) → creates a copy of the color but with 10% opacity (soft pastel look)
                       // Overall: picks a color based on the note's index, loops through available colors,
                       // and makes it transparent for a lighter background effect
-                      color: Colors.primaries[index % Colors.primaries.length]
-                          .withValues(alpha: 0.1),
+                      // color: Colors.primaries[index % Colors.primaries.length]
+                      //     .withValues(alpha: 0.1),
 
                       decoration: BoxDecoration(
                         //iterating over colors as a list of colors
