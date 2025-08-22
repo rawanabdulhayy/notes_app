@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
+import 'package:notes_app/screens/create_note.dart';
 
 import '../db/notes_database.dart';
 
@@ -102,6 +103,15 @@ class _NotesScreenState extends State<NotesScreen> {
 
     //late 34an lessa h-assign-ha a3deen lamma tegy men l end point ta2rebn.
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (context) => CreateNote()));
+          refreshNotes();
+          //ba3d my pop out of context w yerg3 llmain screen, refreshes notes and gets the latest version
+        },
+      ),
       appBar: AppBar(
         centerTitle: true,
         title: Text(
