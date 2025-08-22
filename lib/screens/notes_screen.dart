@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 
+import '../db/notes_database.dart';
+
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
 
@@ -10,6 +12,29 @@ class NotesScreen extends StatefulWidget {
 }
 
 class _NotesScreenState extends State<NotesScreen> {
+  late List<Note> notes;
+  bool isLoading = false;
+  //why did we choose to define such a function inside of the state and outside of the build?
+  Future<void> refreshNotes() async {
+    //we need some kinda flag to see if the screen is loading
+    // 1- bt7mel
+    setState(() {
+      isLoading = true;
+    });
+    // 2- tgeb ldata? through the database function that fetches all notes
+    notes = await NotesDatabase.instance.readAllNotes();
+    // 3- khlast t7meel
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    refreshNotes();
+  }
+
   @override
   Widget build(BuildContext context) {
     //When do I declare stuff here under the build and when do I declare outside of the build?
@@ -24,57 +49,58 @@ class _NotesScreenState extends State<NotesScreen> {
     // --> True for small/local cases; Dart infers the type from the data you put inside.
     //     But in larger codebases, explicitly typing (List<Map<String, dynamic>>) helps catch errors earlier.
 
-    final notes = [
-      {
-        "title": "Grocery List",
-        "content":
-            "Eggs, milk, bread, olive oil, coffee beans, bananas, peanut butter.",
-        "createdAt": DateTime.now().subtract(Duration(minutes: 10)),
-      },
-      {
-        "title": "Workout Plan",
-        "content":
-            "Monday: Push\nTuesday: Pull\nWednesday: Legs\nThursday: Yoga\nFriday: Cardio",
-        "createdAt": DateTime.now().subtract(Duration(hours: 2)),
-      },
-      {
-        "title": "Flutter Ideas",
-        "content":
-            "Try adding dark mode toggle, use Riverpod for state management, explore animations package.",
-        "createdAt": DateTime.now().subtract(Duration(days: 1)),
-      },
-      {
-        "title": "Meeting Notes",
-        "content":
-            "Discussed new app features: onboarding flow, search improvements, bug fixes, and push notifications.",
-        "createdAt": DateTime.now().subtract(Duration(days: 2)),
-      },
-      {
-        "title": "Book Quotes",
-        "content":
-            "\"It is not the strongest of the species that survive, but the most adaptable.\" — Charles Darwin",
-        "createdAt": DateTime.now().subtract(Duration(days: 3, hours: 5)),
-      },
-      {
-        "title": "Recipe",
-        "content":
-            "Spaghetti Aglio e Olio: spaghetti, garlic, olive oil, red pepper flakes, parsley, parmesan.",
-        "createdAt": DateTime.now().subtract(Duration(days: 4)),
-      },
-      {
-        "title": "Travel Checklist",
-        "content":
-            "Passport, tickets, power bank, travel pillow, adapters, sunglasses, sunscreen.",
-        "createdAt": DateTime.now().subtract(Duration(days: 5)),
-      },
-      {
-        "title": "Random Thoughts",
-        "content":
-            "What if we could save UI state to JSON and reload it like a snapshot?",
-        "createdAt": DateTime.now().subtract(Duration(days: 7, hours: 3)),
-      },
-    ];
+    // final notes = [
+    //   {
+    //     "title": "Grocery List",
+    //     "content":
+    //         "Eggs, milk, bread, olive oil, coffee beans, bananas, peanut butter.",
+    //     "createdAt": DateTime.now().subtract(Duration(minutes: 10)),
+    //   },
+    //   {
+    //     "title": "Workout Plan",
+    //     "content":
+    //         "Monday: Push\nTuesday: Pull\nWednesday: Legs\nThursday: Yoga\nFriday: Cardio",
+    //     "createdAt": DateTime.now().subtract(Duration(hours: 2)),
+    //   },
+    //   {
+    //     "title": "Flutter Ideas",
+    //     "content":
+    //         "Try adding dark mode toggle, use Riverpod for state management, explore animations package.",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 1)),
+    //   },
+    //   {
+    //     "title": "Meeting Notes",
+    //     "content":
+    //         "Discussed new app features: onboarding flow, search improvements, bug fixes, and push notifications.",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 2)),
+    //   },
+    //   {
+    //     "title": "Book Quotes",
+    //     "content":
+    //         "\"It is not the strongest of the species that survive, but the most adaptable.\" — Charles Darwin",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 3, hours: 5)),
+    //   },
+    //   {
+    //     "title": "Recipe",
+    //     "content":
+    //         "Spaghetti Aglio e Olio: spaghetti, garlic, olive oil, red pepper flakes, parsley, parmesan.",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 4)),
+    //   },
+    //   {
+    //     "title": "Travel Checklist",
+    //     "content":
+    //         "Passport, tickets, power bank, travel pillow, adapters, sunglasses, sunscreen.",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 5)),
+    //   },
+    //   {
+    //     "title": "Random Thoughts",
+    //     "content":
+    //         "What if we could save UI state to JSON and reload it like a snapshot?",
+    //     "createdAt": DateTime.now().subtract(Duration(days: 7, hours: 3)),
+    //   },
+    // ];
 
+    //late 34an lessa h-assign-ha a3deen lamma tegy men l end point ta2rebn.
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -85,7 +111,7 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
       body:
           // This is a good reminder for using such ternary operator to build the UI based on such a conditional check.
-         //e.g. var.isEmpty? WIDGET1 : WIDGET2
+          //e.g. var.isEmpty? WIDGET1 : WIDGET2
           notes.isEmpty
               ? Center(
                 child: Text(
@@ -109,6 +135,7 @@ class _NotesScreenState extends State<NotesScreen> {
                       // --> Yes, Container has its own padding property (via the 'padding' named parameter).
                       //     But if you also set decoration, that padding applies inside the decoration's border.
                       padding: EdgeInsets.all(16),
+
                       // Colors.primaries → a built-in list of 18 Material Design primary colors (red, pink, blue, etc.)
                       // index % Colors.primaries.length → modulo ensures the index loops back to 0 after reaching the last color
                       //     e.g., if index = 18, 18 % 18 = 0 → starts again from the first color
@@ -117,7 +144,6 @@ class _NotesScreenState extends State<NotesScreen> {
                       // and makes it transparent for a lighter background effect
                       // color: Colors.primaries[index % Colors.primaries.length]
                       //     .withValues(alpha: 0.1),
-
                       decoration: BoxDecoration(
                         //iterating over colors as a list of colors
                         color: Colors.primaries[index % Colors.primaries.length]
@@ -132,7 +158,8 @@ class _NotesScreenState extends State<NotesScreen> {
                           // --> .toString(): Converts any value (even null) to its string representation ("null" if null).
                           //     as String: Tells Dart to treat the value as a String (fails if it's null or not actually a String).
                           Text(
-                            note["title"] as String,
+                            // note["title"] as String,
+                            note.title,
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -141,8 +168,8 @@ class _NotesScreenState extends State<NotesScreen> {
                           SizedBox(height: 8),
                           //N.B) we have more text props : overflow and maxlines.
                           Text(
-                            note['content'] as String,
-
+                            // note['content'] as String,
+                            note.content,
                             // ---- NULL SAFETY USING NULL-AWARE OPERATORS ----
                             // Text(
                             //   (note['content'] ?? '') as String,
@@ -162,7 +189,8 @@ class _NotesScreenState extends State<NotesScreen> {
                           //     DateFormat (from intl package): A utility to convert a DateTime into a nicely formatted String (and parse strings to DateTime).
                           Text(
                             DateFormat.yMMMd().format(
-                              note["createdAt"] as DateTime,
+                              // note["createdAt"] as DateTime,
+                              note.createdAt,
                             ),
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
