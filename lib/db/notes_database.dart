@@ -17,7 +17,7 @@ class Note {
   });
 
   Map<String, Object?> toJson() {
-    //na already m3aya lobj fl program mesh lazm ab3t paramter
+    //na already m3aya el object fl program mesh lazm ab3tu as a parameter.
     return {
       "id": id,
       "content": content,
@@ -44,29 +44,29 @@ class Note {
     String? title,
     String? content,
     DateTime? createdAt,
-  }) //tab wblnsba llmesh hyt3dl? it should take ba2y ldata ladeema lalready 3ndy w mesh 3yza aghrha aw al3b feiha
+  }) //tab wblnsba llmesh hyt3dl? it should take ba2y ldata ladeema lalready 3ndy w mesh 3yza aghyrha aw al3b feiha
   => Note(
     content: content ?? this.content,
     createdAt: createdAt ?? this.createdAt,
     title: title ?? this.title,
   );
-  //btb3t nus5a gdeeda men l note m3 t3deel field aw aktar
+  //copy: btb3t nus5a gdeeda men l note m3 t3deel field aw multiple ones.
 }
 
 class NotesDatabase {
   //aft7 db, CRUD, db init
-  //singleton 34an mesh kul marra acft7 yft7 db gdeeda so we have a memory leak
+  //singleton 34an mesh kul marra aft7 yft7 db gdeeda, so we end up having a memory leak.
   static final NotesDatabase instance = NotesDatabase._init();
   static Database? _database;
+  //law mwguda rag3ha law la, init one
   NotesDatabase._init();
   //what is that aslan? whose constructor and why is it even needed?
-  //law mwguda rag3ha law la init one
 
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase("notes.db");
     return _database!;
-    //lazm mwdue l null safety dah
+    //lazm mwdu3 l null safety dah
   }
 
   //m7tag ab3t path 34an a7dd mkan l initialization bta3 l d
@@ -75,8 +75,23 @@ class NotesDatabase {
     final dbPath = await getDatabasesPath();
     //2- merging both, l gotten onw wlmb3ut f parameter
     final fullPath = join(dbPath, filePath);
+    print('Database path: $fullPath');
     //3- opening the database, after full path merge
+
+    // You're NOT calling _createDB here
+    // You're just TELLING openDatabase "use this function IF you need to create tables"
+
     return await openDatabase(fullPath, version: 1, onCreate: _createDB);
+
+    // ✅ Function reference - let SQLite call it with the right parameters
+    //onCreate: _createDB
+
+    // ❌ Function call - you're calling it immediately (wrong!)
+    //onCreate: _createDB(db, version)  // Where would db and version even come from?
+
+    // ✅ Anonymous function - manually defining the callback
+    //onCreate: (db, version) {
+    //return _createDB(db, version);
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -85,7 +100,7 @@ class NotesDatabase {
    id INTEGER PRIMARY KEY AUTOINCREMENT,
    title TEXT NOT NULL,
    content TEXT NOT NULL,
-   createdAt TEXT NOT NULL,
+   createdAt TEXT NOT NULL
    )
    ''');
   }
@@ -134,7 +149,7 @@ class NotesDatabase {
     return await db.delete("notes", where: 'id = ?', whereArgs: [id]);
   }
 
-  Future <void> closeDatabase () async {
+  Future<void> closeDatabase() async {
     final db = await instance.database;
     db.close();
   }

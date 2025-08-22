@@ -13,6 +13,7 @@ class NotesScreen extends StatefulWidget {
 }
 
 class _NotesScreenState extends State<NotesScreen> {
+  //late 34an lessa h-assign-ha a3deen lamma tegy men l end point ta2rebn.
   late List<Note> notes;
   bool isLoading = false;
   //why did we choose to define such a function inside of the state and outside of the build?
@@ -100,15 +101,14 @@ class _NotesScreenState extends State<NotesScreen> {
     //     "createdAt": DateTime.now().subtract(Duration(days: 7, hours: 3)),
     //   },
     // ];
-
-    //late 34an lessa h-assign-ha a3deen lamma tegy men l end point ta2rebn.
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
         onPressed: () async {
-          Navigator.of(
+          await Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (context) => CreateNote()));
-          refreshNotes();
+          await refreshNotes();
           //ba3d my pop out of context w yerg3 llmain screen, refreshes notes and gets the latest version
         },
       ),

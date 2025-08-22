@@ -1,0 +1,57 @@
+
+### 1. What `Navigator.push` returns
+
+When you do:
+
+```dart
+final result = await Navigator.of(context).push(...);
+```
+
+* `Navigator.push` **returns a `Future`**.
+* That `Future` only **completes when the pushed route is popped** (i.e., when `Navigator.pop` is called from inside the pushed screen).
+* The value you pass to `Navigator.pop(context, value)` will become the `result` of that `Future`.
+
+---
+
+### 2. Why `await` makes the difference
+
+If you just do:
+
+```dart
+Navigator.push(...);
+refreshNotes(); // runs immediately
+```
+
+* `refreshNotes` runs **right after pushing**, before the user even sees the `CreateNote` screen.
+
+But with `await`:
+
+```dart
+await Navigator.push(...);
+refreshNotes(); // runs only after pop
+```
+
+* The `await` pauses execution until the Future from `push` is completed → i.e., until the pushed screen calls `Navigator.pop`.
+* This guarantees that `refreshNotes` won’t run until the user has finished with the `CreateNote` screen and returned.
+
+---
+
+### 3. Visual timeline
+
+Without `await`:
+
+```
+[push CreateNote] → [refreshNotes runs] → [user still writing note] → [pop CreateNote]
+```
+
+With `await`:
+
+```
+[push CreateNote] → [user writes note] → [pop CreateNote] → [refreshNotes runs]
+```
+
+---
+
+⚡ So: **the `Future` returned by `Navigator.push` only completes when the route is popped**. That’s what ensures the order.
+
+---
