@@ -122,7 +122,9 @@ class _NotesScreenState extends State<NotesScreen> {
       body:
           // This is a good reminder for using such ternary operator to build the UI based on such a conditional check.
           //e.g. var.isEmpty? WIDGET1 : WIDGET2
-          notes.isEmpty
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : notes.isEmpty
               ? Center(
                 child: Text(
                   'No notes yet',
