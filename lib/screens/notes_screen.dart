@@ -37,6 +37,11 @@ class _NotesScreenState extends State<NotesScreen> {
     refreshNotes();
   }
 
+  Future <void> deleteNote (Note note) async {
+    await NotesDatabase.instance.deleteNote(note.id!);
+    refreshNotes();
+  }
+
   @override
   Widget build(BuildContext context) {
     //When do I declare stuff here under the build and when do I declare outside of the build?
@@ -199,12 +204,29 @@ class _NotesScreenState extends State<NotesScreen> {
                           // when to use dateformat and when to use datetime? what's the difference?
                           // --> DateTime: The actual object storing a date & time value (e.g., 2025-08-15 20:31:00).
                           //     DateFormat (from intl package): A utility to convert a DateTime into a nicely formatted String (and parse strings to DateTime).
-                          Text(
-                            DateFormat.yMMMd().format(
-                              // note["createdAt"] as DateTime,
-                              note.createdAt,
-                            ),
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          Row(
+                            children: [
+                              Text(
+                                DateFormat.yMMMd().format(
+                                  // note["createdAt"] as DateTime,
+                                  note.createdAt,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Spacer(),
+                              FloatingActionButton(
+                                onPressed: () {
+                                  deleteNote(note);
+                                },
+                                elevation: 0,
+                                highlightElevation: 0,
+                                backgroundColor: Colors.grey.shade200,
+                                child: Icon(Icons.delete),
+                              ),
+                            ],
                           ),
                         ],
                       ),
