@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:notes_app/db/notes_database.dart';
 
 class CreateNote extends StatefulWidget {
-  const CreateNote({super.key});
+  //A- we only ever send this on editing a note.
+  final Note? note;
+  const CreateNote({super.key, this.note});
 
   @override
   State<CreateNote> createState() => _CreateNoteState();
 }
 
 class _CreateNoteState extends State<CreateNote> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  //can I even have a late final together?
+  //he says yes, because it's a final, not gonna change but haven't yet been assigned any values.
+  //yet the problem here was related to having had two different definitions (= TextEditingController())
+  //one in initState and the one underneath.
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
 
   bool isLoading = false;
 
@@ -41,16 +47,33 @@ class _CreateNoteState extends State<CreateNote> {
 
     //4- creating the object (note) using the model's constructor to pass the .text (vars) values.
     final note = Note(
+      id: widget.note!.id,
       content: content,
-      createdAt: DateTime.now(),
       title: title,
+      createdAt: widget.note?.createdAt ?? DateTime.now(),
     );
 
-    //5- Using the DB creation function to pass the created object.
-    await NotesDatabase.instance.createNote(note);
+    //C- accounting for either editing or creating a new note
+    //a7na bnb3t Note note only when we add a new note via el floating action button, that's when we send the parameter through the constructor.
 
+    if (widget.note != null) {
+      await NotesDatabase.instance.updateNotes(note);
+    } else {
+      //5- >> D- Using the DB creation function to pass the created object.
+      await NotesDatabase.instance.createNote(note);
+    }
     //6- popping out to show the previous stacked page.
+    // *** Child screen (CreateNote):
     Navigator.of(context).pop();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    //B- 3ayza awl mft7 l-screen, the data from the note opened shows up, not like a newly created note fashion, bas in an edit note style.
+    //widget here reflects the widget above in context, here it's the CreateNote, because _CreateNoteState can't use CreateNote's property unless explicitly referenced by widget.something
+    _titleController = TextEditingController(text: widget.note?.title);
+    _contentController = TextEditingController(text: widget.note?.content);
   }
 
   @override

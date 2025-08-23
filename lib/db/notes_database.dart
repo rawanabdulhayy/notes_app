@@ -153,4 +153,17 @@ class NotesDatabase {
     final db = await instance.database;
     db.close();
   }
+
+  Future<void> printAllNotes() async {
+    final db = await NotesDatabase.instance.database;
+
+    // Query everything from the table
+    final result = await db.query("notes");
+
+    // Print row by row
+    for (var row in result) {
+      print(row);
+    }
+  }
+
 }

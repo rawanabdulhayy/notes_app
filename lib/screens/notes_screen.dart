@@ -35,11 +35,16 @@ class _NotesScreenState extends State<NotesScreen> {
   void initState() {
     super.initState();
     refreshNotes();
+    printNotes();
   }
 
-  Future <void> deleteNote (Note note) async {
+  Future<void> deleteNote(Note note) async {
     await NotesDatabase.instance.deleteNote(note.id!);
     refreshNotes();
+  }
+
+  Future<void> printNotes() async {
+    await NotesDatabase.instance.printAllNotes();
   }
 
   @override
@@ -147,88 +152,106 @@ class _NotesScreenState extends State<NotesScreen> {
                   itemBuilder: (context, index) {
                     // ---- SO IMPORTANT ----
                     final note = notes[index];
-                    return Container(
-                      //containers have their own padding properties too????
-                      // --> Yes, Container has its own padding property (via the 'padding' named parameter).
-                      //     But if you also set decoration, that padding applies inside the decoration's border.
-                      padding: EdgeInsets.all(16),
+                    return GestureDetector(
+                      onTap: () async {
+                        //-------Two Navigator Approaches-------
+                        //Navigator.push(context, MaterialPageRoute(...))
+                        //Navigator.of(context).push(MaterialPageRoute(...))
 
-                      // Colors.primaries → a built-in list of 18 Material Design primary colors (red, pink, blue, etc.)
-                      // index % Colors.primaries.length → modulo ensures the index loops back to 0 after reaching the last color
-                      //     e.g., if index = 18, 18 % 18 = 0 → starts again from the first color
-                      // .withValues(alpha: 0.1) → creates a copy of the color but with 10% opacity (soft pastel look)
-                      // Overall: picks a color based on the note's index, loops through available colors,
-                      // and makes it transparent for a lighter background effect
-                      // color: Colors.primaries[index % Colors.primaries.length]
-                      //     .withValues(alpha: 0.1),
-                      decoration: BoxDecoration(
-                        //iterating over colors as a list of colors
-                        color: Colors.primaries[index % Colors.primaries.length]
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Text(notes["title"].toString()),
-                          //So what's the difference between .toString and as String?
-                          // --> .toString(): Converts any value (even null) to its string representation ("null" if null).
-                          //     as String: Tells Dart to treat the value as a String (fails if it's null or not actually a String).
-                          Text(
-                            // note["title"] as String,
-                            note.title,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        // *** Parent screen (Notes Screen):
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateNote(note: note),
                           ),
-                          SizedBox(height: 8),
-                          //N.B) we have more text props : overflow and maxlines.
-                          Text(
-                            // note['content'] as String,
-                            note.content,
-                            // ---- NULL SAFETY USING NULL-AWARE OPERATORS ----
-                            // Text(
-                            //   (note['content'] ?? '') as String,
-                            // )
-                            // ---- OR ----
-                            // Text(note['content'] ?? '')
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w100,
-                              fontSize: 14,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          // when to use dateformat and when to use datetime? what's the difference?
-                          // --> DateTime: The actual object storing a date & time value (e.g., 2025-08-15 20:31:00).
-                          //     DateFormat (from intl package): A utility to convert a DateTime into a nicely formatted String (and parse strings to DateTime).
-                          Row(
-                            children: [
-                              Text(
-                                DateFormat.yMMMd().format(
-                                  // note["createdAt"] as DateTime,
-                                  note.createdAt,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
+                        );
+                        // ---- WE ADDED THIS ONE HERE TO MAKE SURE WE REFRESH UPON EXITING THE CHILD SCREEN
+                        refreshNotes();
+                      },
+                      child: Container(
+                        //containers have their own padding properties too????
+                        // --> Yes, Container has its own padding property (via the 'padding' named parameter).
+                        //     But if you also set decoration, that padding applies inside the decoration's border.
+                        padding: EdgeInsets.all(16),
+
+                        // Colors.primaries → a built-in list of 18 Material Design primary colors (red, pink, blue, etc.)
+                        // index % Colors.primaries.length → modulo ensures the index loops back to 0 after reaching the last color
+                        //     e.g., if index = 18, 18 % 18 = 0 → starts again from the first color
+                        // .withValues(alpha: 0.1) → creates a copy of the color but with 10% opacity (soft pastel look)
+                        // Overall: picks a color based on the note's index, loops through available colors,
+                        // and makes it transparent for a lighter background effect
+                        // color: Colors.primaries[index % Colors.primaries.length]
+                        //     .withValues(alpha: 0.1),
+                        decoration: BoxDecoration(
+                          //iterating over colors as a list of colors
+                          color: Colors
+                              .primaries[index % Colors.primaries.length]
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Text(notes["title"].toString()),
+                            //So what's the difference between .toString and as String?
+                            // --> .toString(): Converts any value (even null) to its string representation ("null" if null).
+                            //     as String: Tells Dart to treat the value as a String (fails if it's null or not actually a String).
+                            Text(
+                              // note["title"] as String,
+                              note.title,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
-                              Spacer(),
-                              FloatingActionButton(
-                                onPressed: () {
-                                  deleteNote(note);
-                                },
-                                elevation: 0,
-                                highlightElevation: 0,
-                                backgroundColor: Colors.grey.shade200,
-                                child: Icon(Icons.delete),
+                            ),
+                            SizedBox(height: 8),
+                            //N.B) we have more text props : overflow and maxlines.
+                            Text(
+                              // note['content'] as String,
+                              note.content,
+                              // ---- NULL SAFETY USING NULL-AWARE OPERATORS ----
+                              // Text(
+                              //   (note['content'] ?? '') as String,
+                              // )
+                              // ---- OR ----
+                              // Text(note['content'] ?? '')
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w100,
+                                fontSize: 14,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                            SizedBox(height: 8),
+                            // when to use dateformat and when to use datetime? what's the difference?
+                            // --> DateTime: The actual object storing a date & time value (e.g., 2025-08-15 20:31:00).
+                            //     DateFormat (from intl package): A utility to convert a DateTime into a nicely formatted String (and parse strings to DateTime).
+                            Row(
+                              children: [
+                                Text(
+                                  DateFormat.yMMMd().format(
+                                    // note["createdAt"] as DateTime,
+                                    note.createdAt,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Spacer(),
+                                FloatingActionButton(
+                                  onPressed: () {
+                                    deleteNote(note);
+                                  },
+                                  elevation: 0,
+                                  highlightElevation: 0,
+                                  backgroundColor: Colors.grey.shade200,
+                                  child: Icon(Icons.delete),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
