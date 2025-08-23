@@ -17,7 +17,8 @@ class Note {
   });
 
   Map<String, Object?> toJson() {
-    //na already m3aya el object fl program mesh lazm ab3tu as a parameter.
+    // We already have the Note object in program's memory — no need to pass it as a parameter.
+    // This function converts it into a Map<String, Object?> so SQLite can store it.
     return {
       "id": id,
       "content": content,
@@ -31,111 +32,146 @@ class Note {
   }
 
   static Note fromJson(Map<String, Object?> json) {
+    // Converts a row (Map<String, Object?>) retrieved from SQLite
+    // back into a strongly typed Note object.
     return Note(
-      id: json["id"] as int?, // nullable since it might be auto-generated
+      id:
+          json["id"]
+              as int?, // nullable since SQLite may auto-generate it -- AUTOINCREMENT
       title: json["title"] as String,
       content: json["content"] as String,
       createdAt: DateTime.parse(json["createdAt"] as String),
     );
   }
 
-  Note copy({
-    int? id,
-    String? title,
-    String? content,
-    DateTime? createdAt,
-  }) //tab wblnsba llmesh hyt3dl? it should take ba2y ldata ladeema lalready 3ndy w mesh 3yza aghyrha aw al3b feiha
-  => Note(
-    content: content ?? this.content,
-    createdAt: createdAt ?? this.createdAt,
-    title: title ?? this.title,
-  );
-  //copy: btb3t nus5a gdeeda men l note m3 t3deel field aw multiple ones.
+  // Copy: creates a new Note instance based on the existing one,
+  // while allowing specific fields to be overridden.
+  // If a field is not passed, the current object's value is preserved.
+  Note copy({int? id, String? title, String? content, DateTime? createdAt}) =>
+      Note(
+        content: content ?? this.content,
+        createdAt: createdAt ?? this.createdAt,
+        title: title ?? this.title,
+      );
 }
 
 class NotesDatabase {
-  //aft7 db, CRUD, db init
-  //singleton 34an mesh kul marra aft7 yft7 db gdeeda, so we end up having a memory leak.
+  // This class handles:
+  // - Opening the SQLite database
+  // - Database initialization
+  // - CRUD operations (Create, Read, Update, Delete)
+  //
+  // Singleton Pattern:
+  // - We use a singleton here so that only ONE instance of NotesDatabase exists.
+  // - If we created a new instance each time, we’d open multiple database
+  //   connections → this would cause memory leaks and unexpected behavior.
+
   static final NotesDatabase instance = NotesDatabase._init();
-  static Database? _database;
-  //law mwguda rag3ha law la, init one
+  static Database? _database; // cache for the opened database instance
   NotesDatabase._init();
-  //what is that aslan? whose constructor and why is it even needed?
+  // Private constructor:
+  // - Named "_init" so it can only be accessed internally.
+  // - Prevents external code from creating multiple NotesDatabase objects.
 
   Future<Database> get database async {
+    // If we already opened the database, return it.
     if (_database != null) return _database!;
+    // If not, initialize it.
     _database = await _initDatabase("notes.db");
+    // And then return the one you got.
     return _database!;
-    //lazm mwdu3 l null safety dah
+    // Null-safety:
+    // - _database is nullable at first.
+    // - After assignment, we use ! to ensure it's non-null before returning.
   }
 
-  //m7tag ab3t path 34an a7dd mkan l initialization bta3 l d
   Future<Database> _initDatabase(String filePath) async {
-    //1- getting lmkan bta3 lfile
+    // 1. Get the default system path where SQLite databases are stored.
     final dbPath = await getDatabasesPath();
-    //2- merging both, l gotten onw wlmb3ut f parameter
+
+    // 2. Merge the system path with our custom database filename.
     final fullPath = join(dbPath, filePath);
     print('Database path: $fullPath');
-    //3- opening the database, after full path merge
 
-    // You're NOT calling _createDB here
-    // You're just TELLING openDatabase "use this function IF you need to create tables"
+    // 3. Open the database.
+    //    If the database file doesn’t exist yet, it will be created.
+    //    If it’s the first time opening, onCreate will be triggered.
+    return await openDatabase(
+      fullPath,
+      version: 1,
+      onCreate: _createDB,
+    );
 
-    return await openDatabase(fullPath, version: 1, onCreate: _createDB);
-
-    // ✅ Function reference - let SQLite call it with the right parameters
-    //onCreate: _createDB
-
-    // ❌ Function call - you're calling it immediately (wrong!)
-    //onCreate: _createDB(db, version)  // Where would db and version even come from?
-
-    // ✅ Anonymous function - manually defining the callback
-    //onCreate: (db, version) {
-    //return _createDB(db, version);
+    // ⚠️ Important Notes:
+    // ✅ Correct: pass the function reference → onCreate: _createDB
+    //    (SQLite will call _createDB automatically with the right arguments).
+    //
+    // ❌ Wrong: calling the function yourself → onCreate: _createDB(db, version)
+    //    (db and version wouldn’t exist in this scope).
+    //
+    // ✅ Alternative: wrap in an anonymous function
+    //    onCreate: (db, version) => _createDB(db, version)
   }
 
   Future<void> _createDB(Database db, int version) async {
+    // This function is only called the first time the database is created.
+    // Here, we define the schema for the "notes" table.
     await db.execute('''
-   CREATE TABLE notes (
-   id INTEGER PRIMARY KEY AUTOINCREMENT,
-   title TEXT NOT NULL,
-   content TEXT NOT NULL,
-   createdAt TEXT NOT NULL
-   )
-   ''');
+      CREATE TABLE notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, -- auto-increment unique id
+        title TEXT NOT NULL,                  -- note title
+        content TEXT NOT NULL,                -- note body
+        createdAt TEXT NOT NULL               -- ISO 8601 string timestamp
+      )
+    ''');
   }
 
   Future<Note> createNote(Note note) async {
     final db = await instance.database;
-    //3ayzeen nzwd l ID autogenerated fldatabase w yt create mennu nus5a gdeeda
-    //function insert btrg3 id aslan
+
+    // Insert returns the auto-generated id for the new row.
     final id = await db.insert("notes", note.toJson());
+
+    // Return a copy of the note object with the new id injected.
     return note.copy(id: id);
   }
 
   Future<Note> readNote(int id) async {
     final db = await instance.database;
-    //btrg3 list kamla, not just one note, bas i need only one note using a unique id
-    //by default columns get to choose those you wanna return
+
+    // Query a specific note by its id.
+    // query() returns a List<Map<String, Object?>> (even if there’s only one row).
     final maps = await db.query(
       "notes",
-      columns: ['id', 'title', 'content', 'createdAt'],
-      where: 'id = ?', // una2n 3allla eh
-      whereArgs: [id], //value
-      //whereargs vs where?
+      columns: ['id', 'title', 'content', 'createdAt'], // select specific columns
+      where: 'id = ?', // condition placeholder (prevents SQL injection)
+      whereArgs: [id], // actual value(s) for the placeholder
+      // where vs whereArgs:
+      // - "where" defines the condition (e.g., 'id = ?').
+      // - "whereArgs" provides the actual values (e.g., [id]).
+      //   This separation prevents SQL injection and ensures safe queries.
     );
+
+    // Since the id is unique, there will be exactly one row.
+    // maps is a list, so we take the first (and only) element.
     return Note.fromJson(maps.first);
-    //kedah kedah l list feiha item wa7ed bas it has to be treated still as a list
   }
 
   Future<List<Note>> readAllNotes() async {
     final db = await instance.database;
+
+    // Query all notes, ordered by creation date descending (newest first).
     final result = await db.query('notes', orderBy: "createdAt DESC");
+
+    // Convert the raw map data into a List<Note>.
     return result.map((note) => Note.fromJson(note)).toList();
   }
 
   Future<int> updateNotes(Note note) async {
     final db = await instance.database;
+
+    // Update the row where id = note.id.
+    // Returns the number of rows affected (should be 1 if successful).
     return db.update(
       "notes",
       note.toJson(),
@@ -146,24 +182,33 @@ class NotesDatabase {
 
   Future<int> deleteNote(int id) async {
     final db = await instance.database;
-    return await db.delete("notes", where: 'id = ?', whereArgs: [id]);
+
+    // Delete the row with the matching id.
+    // Returns the number of rows deleted (should be 1 if successful).
+    return await db.delete(
+      "notes",
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> closeDatabase() async {
     final db = await instance.database;
+
+    // Always close the database when it’s no longer needed
+    // (e.g., when the app shuts down) to prevent memory leaks.
     db.close();
   }
 
   Future<void> printAllNotes() async {
     final db = await NotesDatabase.instance.database;
 
-    // Query everything from the table
+    // Query everything from the "notes" table.
     final result = await db.query("notes");
 
-    // Print row by row
+    // Print each row (for debugging/inspection).
     for (var row in result) {
       print(row);
     }
   }
-
 }
