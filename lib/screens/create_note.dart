@@ -47,7 +47,7 @@ class _CreateNoteState extends State<CreateNote> {
 
     //4- creating the object (note) using the model's constructor to pass the .text (vars) values.
     final note = Note(
-      id: widget.note!.id,
+      id: widget.note?.id,
       content: content,
       title: title,
       createdAt: widget.note?.createdAt ?? DateTime.now(),

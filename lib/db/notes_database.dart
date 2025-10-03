@@ -49,6 +49,7 @@ class Note {
   // If a field is not passed, the current object's value is preserved.
   Note copy({int? id, String? title, String? content, DateTime? createdAt}) =>
       Note(
+        id: id ?? this.id,
         content: content ?? this.content,
         createdAt: createdAt ?? this.createdAt,
         title: title ?? this.title,
